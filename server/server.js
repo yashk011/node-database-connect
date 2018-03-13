@@ -1,68 +1,55 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var {ObjectID} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose');
-var {Todo} = require('./modules/todo.js');
-var {Users} = require('./modules/users.js');
+var {Todo} = require('./modules/todo');
+var {User} = require('./modules/users');
 
-
-var app =  express();
+var app = express();
 
 app.use(bodyParser.json());
 
-app.post('/todos' , (req , res) =>{
+app.post('/todos', (req, res) => {
   var todo = new Todo({
-    text : req.body.text
+    text: req.body.text
   });
 
-  todo.save().then((doc) =>{
-
+  todo.save().then((doc) => {
     res.send(doc);
-
-  } , (e) =>{
-
+  }, (e) => {
     res.status(400).send(e);
   });
 });
 
-
-/*
-
-var newTodo = new Todo({
-
-  text : '   ' ,
-  completed: true ,
-  completedAt: 123
-
-});
-newTodo.save().then((res) =>{
-
-  console.log(res);
-
-}, (e) =>{
-
-console.log(' cant add to collection ' )
-
+app.get('/todos', (req, res) => {
+  Todo.find().then((todos) => {
+    res.send({todos});
+  }, (e) => {
+    res.status(400).send(e);
+  });
 });
 
+app.get('/todos/:id', (req, res) => {
+  var id = req.params.id;
 
-var oneUser =  new Users({
-   name : '    ' ,
-   email : 'ram@gmail.com'
+  if (!ObjectID.isValid(id)) {
+    return res.status(404).send();
+  }
 
+  Todo.findById(id).then((todo) => {
+    if (!todo) {
+      return res.status(404).send();
+    }
+
+    res.send({todo});
+  }).catch((e) => {
+    res.status(400).send();
+  });
 });
 
-oneUser.save().then((res) =>{
-
-  console.log(res);
-
-} , (e) =>{
-
-  console.log('Cant add the record to database');
+app.listen(3000, () => {
+  console.log('Started on port 3000');
 });
-*/
 
-app.listen(3000 , () =>{
-
-  console.log('Listening to port 3000');
-})
+module.exports = {app};
