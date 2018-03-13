@@ -17,7 +17,7 @@ beforeEach((done) => {
   Todo.remove({}).then(() => {
     return Todo.insertMany(todos);
   }).then(() => done());
-});
+});*/
 
 describe('POST /todos', () => {
   it('should create a new todo', (done) => {
@@ -36,7 +36,7 @@ describe('POST /todos', () => {
         }
 
         Todo.find({text}).then((todos) => {
-          expect(todos.length).toBe(1);
+          expect(todos.length).toBe(2);
           expect(todos[0].text).toBe(text);
           done();
         }).catch((e) => done(e));
@@ -72,7 +72,7 @@ describe('GET /todos', () => {
       .end(done);
   });
 });
-*/
+
 describe('GET /todos/:id', () => {
   it('should return todo doc', (done) => {
     request(app)
