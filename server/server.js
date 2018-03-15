@@ -17,7 +17,7 @@ app.post('/todos', (req, res) => {
   });
 
   todo.save().then((doc) => {
-    res.send(doc);
+    res.status(200).send(doc);
   }, (e) => {
     res.status(400).send(e);
   });
@@ -52,17 +52,18 @@ app.get('/todos/:id', (req, res) => {
 app.delete('/todos/:id' ,(req ,res) =>{
 
 var id = req.params.id;
+console.log(id);
 
 if(!ObjectID.isValid(id)) {
   return res.status(404).send();
 }
 
-Todo.findByIdAndRemove(id).then((docs) =>{
-  if(!docs){
+Todo.findOneAndRemove({_id :id}).then((todo) =>{
+  if(!todo){
     return res.status(404).send();
   }
 
-  res.status(200).send({docs});
+  res.status(200).send({todo});
 
 }).catch((e) =>{
   res.status(400).send();
