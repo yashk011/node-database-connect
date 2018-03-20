@@ -1,3 +1,5 @@
+
+
 const expect = require('expect');
 const request = require('supertest');
 const {ObjectID} = require('mongodb');
@@ -5,19 +7,24 @@ const {ObjectID} = require('mongodb');
 const {app} = require('./../server');
 const {Todo} = require('./../modules/todo');
 
-const todos = [{
-  _id: new ObjectID(),
-  text: 'First test todo'
-}, {
-  _id: new ObjectID(),
-  text: 'Second test todo'
-}];
-/*
 beforeEach((done) => {
   Todo.remove({}).then(() => {
     return Todo.insertMany(todos);
   }).then(() => done());
-});*/
+});
+
+const todos = [{
+  _id: new ObjectID(),
+  text: 'First test todo' ,
+  completed: false
+}, {
+  _id: new ObjectID(),
+  text: 'Second test todo',
+  completed:true,
+  completedAt:123
+}];
+
+
 
 describe('POST /todos', () => {
   it('should create a new todo', (done) => {
@@ -142,4 +149,49 @@ describe('DELETE /todod/:id' , () =>{
       .end(done);
   });
 
+});
+
+
+describe('PATCH /todos' ,() =>{
+  it('should return updated value of completed to true' , (done) =>{
+    var hexId = todos[0]._id.toHexString();
+    var text = 'New Text'
+
+    request(app)
+    .patch(`/todos/${hexId}`)
+    .send({
+      completed : true ,
+      text
+
+    })
+    .expect(200)
+    .expect((res) => {
+      expect(res.body.todo.completed).toBe(true);
+      expect(res.body.todo.completedAt).toBeA('number');
+      expect(res.body.todo.text).toBe(text);
+
+    })
+    .end(done)
+  });
+
+  it('should return updated value of completed to False' , (done) =>{
+    var hexId = todos[1]._id.toHexString();
+    var text = 'new Text 2'
+
+    request(app)
+    .patch(`/todos/${hexId}`)
+    .send({
+      completed : false ,
+      completedAt :null
+
+    })
+    .expect(200)
+    .expect((res) => {
+      expect(res.body.todo.completed).toBe(false);
+      expect(res.body.todo.completedAt).toBeA(null);
+      expect(res.body.todo.text).toBe(text);
+
+    })
+    .end(done)
+  });
 });
