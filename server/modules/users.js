@@ -42,6 +42,13 @@ var UserSchema = new mongoose.Schema({
 
 var Users = mongoose.model('users' , UserSchema);
 
+UserSchema.methods.toJSON = function () {
+  var user = this;
+  var userObject = user.toObject();
+
+  return _.pick(userObject, ['_id', 'email']);
+};
+
 UserSchema.methods.generateAuthToken = function () {
 var user = this ;
 var access = 'auth';
@@ -74,4 +81,23 @@ return User.findOne({
 
 });
 };
+
+UserSchema.pre('save' , function(next) {
+
+  var user = this;
+  if(user.isModified('password')){
+
+    bcrypt.genSalt(10,(err,salt) =>{
+
+      bcrypt.hash(user.password, salt ,(err,hash) =>{
+        user.password = hash;
+        next();
+      });
+    });
+
+  }
+  else {
+    next();
+  }
+});
 module.exports = {Users};
