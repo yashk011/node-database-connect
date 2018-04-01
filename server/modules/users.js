@@ -2,6 +2,7 @@ var mongoose = require('mongoose');
 var validator = require('validator');
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 
 var UserSchema = new mongoose.Schema({
@@ -40,7 +41,6 @@ var UserSchema = new mongoose.Schema({
 
 });
 
-var Users = mongoose.model('users' , UserSchema);
 
 UserSchema.methods.toJSON = function () {
   var user = this;
@@ -52,7 +52,7 @@ UserSchema.methods.toJSON = function () {
 UserSchema.methods.generateAuthToken = function () {
 var user = this ;
 var access = 'auth';
-var token = jwt.sign({ _id : user._id.toHexString(), access} , 'yash56788').toString();
+var token = jwt.sign({ _id : user._id.toHexString(), access} , process.env.JWT_SECRET).toString();
 
 
   user.tokens= user.tokens.concat([{access , token}]);
@@ -61,12 +61,51 @@ var token = jwt.sign({ _id : user._id.toHexString(), access} , 'yash56788').toSt
   });
 };
 
+UserSchema.methods.removeToken = function (token) {
+var user = this;
+user.update({
+  $pull : {
+    tokens : {
+      token : token
+    }
+
+  }
+
+});
+
+};
+
+UserSchema.statics.findByCredentials = function (email , password) {
+
+var User = this;
+return User.findOne({email}).then((user) =>{
+if(!user){
+  return Promise.reject();
+}
+return  new Promise((resolve , reject) =>{
+
+bcrypt.compare(password , user.password , (err , res) =>{
+
+    if(res){
+      resolve(user);
+    }
+    else {
+      reject();
+    }
+
+    });
+
+  });
+
+});
+};
+
 UserSchema.statics.findByToken = function (token) {
 var User = this;
 var decoded;
 
 try{
-decoded = jwt.verify(token, 'yash56788')
+decoded = jwt.verify(token, process.env.JWT_SECRET)
 
 } catch(e) {
   return new Promise.reject();
@@ -74,7 +113,7 @@ decoded = jwt.verify(token, 'yash56788')
 
 }
 return User.findOne({
-'_id' : decoded_id ,
+'_id' : decoded._id ,
 'tokens.token' : token,
 'tokens.access' :'auth'
 
@@ -85,7 +124,7 @@ return User.findOne({
 UserSchema.pre('save' , function(next) {
 
   var user = this;
-  if(user.isModified('password')){
+  if(user.isModified('password')) {
 
     bcrypt.genSalt(10,(err,salt) =>{
 
@@ -100,4 +139,7 @@ UserSchema.pre('save' , function(next) {
     next();
   }
 });
+
+var Users = mongoose.model('users' , UserSchema);
+
 module.exports = {Users};
